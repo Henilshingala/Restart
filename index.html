@@ -1,1 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For You — A Little Song</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
 
+/* ============================================================
+   BASE
+   ============================================================ */
+:root{
+  --paper: #fdf6ee;
+  --paper-dark: #f6e9d8;
+  --ink: #4a3826;
+  --ink-soft: #7a6650;
+  --rose: #c4425a;
+  --rose-dark: #8f2c40;
+  --rose-light: #f3a3b3;
+  --leaf: #6f8f5b;
+  --leaf-dark: #4d6640;
+  --gold: #b08d3e;
+  --teddy: #b98457;
+  --teddy-dark: #8c6340;
+  --blush: #fbe4e8;
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0; padding:0; width:100%; min-height:100%;
+  max-width:100vw;
+  font-family:'Cormorant Garamond', serif;
+  color:var(--ink);
+}
+html{ overflow-x:hidden; }
+
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(255,255,255,0.65), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(255,255,255,0.5), transparent 55%),
+    radial-gradient(ellipse at 50% 50%, var(--blush) 0%, #fbf1e6 55%, #f7e9d6 100%);
+  position:relative;
+  overflow-x:hidden;
+  padding-bottom: 120px; /* room for the docked player */
+}
+
+button{ font-family:inherit; cursor:pointer; }
+
+/* ============================================================
+   FLOATING PETALS (ambient decoration)
+   ============================================================ */
+.petals{ position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
+.petal{
+  position:absolute; top:-5%;
+  width:14px; height:14px;
+  background: radial-gradient(circle at 35% 30%, var(--rose-light), var(--rose) 70%);
+  border-radius: 0 60% 0 60%;
+  opacity:0.75;
+  animation: fall linear infinite;
+}
+@keyframes fall{
+  0%{ transform: translateY(0) rotate(0deg); }
+  100%{ transform: translateY(115vh) rotate(360deg); }
+}
+
+/* ============================================================
+   CORNER DECORATIONS
+   ============================================================ */
+.decor{ position:absolute; pointer-events:none; z-index:2; }
+.decor.tl{ top:-18px; left:-18px; width:150px; }
+.decor.tr{ top:-22px; right:-22px; width:150px; transform:scaleX(-1); }
+.decor.bl{ bottom:-24px; left:-20px; width:140px; }
+.decor.br{ bottom:-20px; right:-18px; width:140px; }
+
+@media (max-width: 560px){
+  .decor{ width:90px !important; }
+  .decor.tl{ top:-10px; left:-10px; }
+  .decor.tr{ top:-12px; right:-12px; }
+  .decor.bl{ bottom:-12px; left:-10px; }
+  .decor.br{ bottom:-10px; right:-10px; }
+}
+
+@media (max-width: 380px){
+  .decor{ width:66px !important; }
+  .start-ring{ width:96px; height:96px; }
+  .start-btn{ width:70px; height:70px; }
+  .start-btn svg{ width:22px; height:22px; }
+}
+
+/* ============================================================
+   LETTER
+   ============================================================ */
+.letter-stage{
+  position:relative;
+  z-index:3;
+  display:flex; justify-content:center;
+  padding: 40px 14px 24px;
+  width:100%;
+}
+
+.letter-sheet{
+  position:relative;
+  width:min(640px, 100%);
+  max-width: 100%;
+  background:
+    radial-gradient(ellipse 240px 160px at 8% 6%, rgba(196,66,90,0.06), transparent 60%),
+    radial-gradient(ellipse 220px 160px at 95% 92%, rgba(111,143,91,0.08), transparent 60%),
+    linear-gradient(180deg, #fffdfa 0%, var(--paper) 100%);
+  padding: 56px clamp(18px, 6vw, 66px) 48px;
+  border-radius: 6px;
+  box-shadow: 0 30px 60px rgba(120,70,60,0.18), 0 6px 18px rgba(120,70,60,0.12);
+  overflow: visible;
+}
+
+@media (max-width: 380px){
+  .letter-sheet{ padding: 46px 14px 40px; }
+}
+
+.letter-sheet::before{
+  content:"";
+  position:absolute; inset:0; opacity:0.4; border-radius:6px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><g fill='none' stroke='%23f0d8dd' stroke-width='1' opacity='0.6'><circle cx='40' cy='40' r='9'/><path d='M40 22 C47 29 47 33 40 40 C33 33 33 29 40 22 Z'/><path d='M40 58 C47 51 47 47 40 40 C33 47 33 51 40 58 Z'/></g></svg>");
+  background-size: 80px 80px;
+  mix-blend-mode: multiply;
+  pointer-events:none;
+}
+
+.letter-title{
+  position:relative;
+  text-align:center;
+  font-family:'Dancing Script', cursive;
+  font-weight:700;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  color: var(--rose-dark);
+  margin: 4px 0 4px;
+}
+.letter-sub{
+  position:relative;
+  text-align:center;
+  color:var(--ink-soft);
+  font-style:italic;
+  font-size:1.05rem;
+  margin-bottom: 30px;
+}
+
+.heart-divider{ display:flex; justify-content:center; margin: 4px 0 36px; opacity:0.8; }
+
+/* ============================================================
+   LYRIC STAGE — one line at a time, karaoke style
+   ============================================================ */
+.lyric-stage{
+  position:relative;
+  min-height: 280px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  text-align:center;
+  padding: 12px 6px;
+  overflow:hidden;
+  width:100%;
+}
+
+.lyric-history{
+  width:min(100%, 48ch);
+  max-width:48ch;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap: 5px;
+  min-height: 230px;
+  padding: 4px 2px 12px;
+}
+
+.lyric-line{
+  width:100%;
+  margin:0;
+  font-size: clamp(1.22rem, 3.7vw, 1.75rem);
+  line-height:1.38;
+  color: var(--rose-dark);
+  font-weight:600;
+  text-shadow: 0 0 18px rgba(196,66,90,0.18);
+  opacity:0.25;
+  transform:scale(0.96);
+  transition: opacity 0.45s ease, transform 0.45s ease, color 0.45s ease;
+  text-align:center;
+  align-self:center;
+  scroll-margin: 40vh 0; /* keeps the active line clear of the docked player when scrolled into view */
+}
+
+.lyric-line.past{
+  opacity:0.28;
+  color:var(--ink-soft);
+  text-shadow:none;
+  transform:scale(0.94);
+}
+
+.lyric-line.current{
+  opacity:1;
+  color:var(--rose-dark);
+  text-shadow: 0 0 18px rgba(196,66,90,0.18);
+  transform:scale(1);
+  font-weight:700;
+}
+
+.lyric-line.future{
+  opacity:0;
+  height:0;
+  overflow:hidden;
+  margin:0;
+  transform:translateY(8px) scale(0.96);
+}
+
+.lyric-history.finished{
+  transform:translateY(0) !important;
+  min-height:0;
+}
+
+.lyric-stage.finished{
+  min-height:0;
+  overflow:visible;
+}
+
+.lyric-idle{
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   START BUTTON (shown before playback begins)
+   ============================================================ */
+.start-wrap{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  margin: 6px auto 46px;
+}
+
+.start-ring{
+  position:relative;
+  width: 118px; height:118px;
+  display:flex; align-items:center; justify-content:center;
+}
+.start-ring svg.wreath{
+  position:absolute; inset:0; width:100%; height:100%;
+  animation: spin 26s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.start-btn{
+  width: 84px; height:84px;
+  border-radius:50%;
+  border:none;
+  background: radial-gradient(circle at 32% 28%, var(--rose-light), var(--rose) 60%, var(--rose-dark) 100%);
+  box-shadow: 0 10px 20px rgba(140,40,60,0.35), inset 0 -5px 8px rgba(0,0,0,0.2), inset 0 4px 6px rgba(255,255,255,0.3);
+  display:flex; align-items:center; justify-content:center;
+  transition: transform 0.25s ease;
+  z-index:2;
+}
+.start-btn:hover{ transform: scale(1.06); }
+.start-btn svg{ width:28px; height:28px; fill:#fff7f0; margin-left:4px; }
+
+.start-caption{
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.start-wrap.hidden{
+  animation: fadeOutUp 0.5s ease forwards;
+}
+
+/* The start control must never occupy horizontal space beside the lyrics. */
+.start-wrap{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  margin:0;
+}
+
+.start-wrap.hidden{
+  display:none;
+}
+
+.lyric-stage.playing{
+  display:block;
+}
+
+.lyric-stage.playing .lyric-history{
+  margin-left:auto;
+  margin-right:auto;
+}
+@keyframes fadeOutUp{
+  to{ opacity:0; transform: translateY(-10px); pointer-events:none; }
+}
+
+.letter-footer-space{ height: 10px; }
+
+/* ============================================================
+   DOCKED PLAYER — slides to the bottom of the page on play
+   ============================================================ */
+.player{
+  position: fixed;
+  left: 50%;
+  bottom: -120px;
+  transform: translateX(-50%);
+  width: min(460px, 92vw);
+  z-index: 20;
+  background: linear-gradient(180deg, #fffaf2, #f7e9d3);
+  border: 1px solid rgba(180,120,90,0.28);
+  border-radius: 999px;
+  padding: 10px 18px 10px 10px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow: 0 14px 30px rgba(100,55,40,0.28), inset 0 0 0 1px rgba(255,255,255,0.6);
+  opacity:0;
+  transition: bottom 0.7s cubic-bezier(.2,.8,.2,1), opacity 0.5s ease;
+}
+.player.docked{
+  bottom: 18px;
+  opacity:1;
+}
+
+.play-btn{
+  flex:0 0 auto; width:42px; height:42px; border-radius:50%; border:none;
+  background: radial-gradient(circle at 32% 28%, var(--rose-light), var(--rose) 55%, var(--rose-dark) 100%);
+  box-shadow: 0 4px 8px rgba(120,40,50,0.4), inset 0 -3px 5px rgba(0,0,0,0.25);
+  display:flex; align-items:center; justify-content:center;
+  transition: transform 0.2s ease;
+}
+.play-btn:hover{ transform: scale(1.06); }
+.play-btn svg{ width:16px; height:16px; fill:#fff7f0; }
+
+.player-mid{ flex:1 1 auto; display:flex; flex-direction:column; gap:4px; min-width:0; }
+.progress-row{ display:flex; align-items:center; gap:8px; }
+.time{ font-size:0.75rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; width:36px; flex:0 0 auto; }
+.time.total{ text-align:right; }
+
+.progress-track{ position:relative; flex:1 1 auto; height:8px; border-radius:999px; background: rgba(180,110,90,0.2); cursor:pointer; overflow:hidden; }
+.progress-fill{ position:absolute; left:0; top:0; bottom:0; width:0%; background: linear-gradient(90deg, var(--rose), var(--rose-dark)); border-radius:999px; }
+.progress-thumb{ position:absolute; top:50%; left:0%; width:12px; height:12px; border-radius:50%; background:var(--paper); border:2px solid var(--rose-dark); transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,0.35); }
+
+.vol-row{ flex:0 0 auto; display:flex; align-items:center; gap:6px; }
+.vol-row svg{ width:15px; height:15px; opacity:0.65; flex:0 0 auto; }
+.vol-track{ position:relative; width:52px; height:6px; border-radius:999px; background: rgba(180,110,90,0.2); cursor:pointer; }
+.vol-fill{ position:absolute; left:0; top:0; bottom:0; width:80%; background: var(--gold); border-radius:999px; }
+
+@media (max-width: 480px){
+  .vol-row{ display:none; }
+  .player{ padding: 8px 12px 8px 8px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ambient falling petals -->
+<div class="petals" id="petals" aria-hidden="true"></div>
+
+<div class="letter-stage">
+  <div class="letter-sheet">
+
+    <!-- corner decorations: roses, flowers, teddy -->
+    <svg class="decor tl" viewBox="0 0 150 150" aria-hidden="true">
+      <g fill="none" stroke="var(--leaf)" stroke-width="2.2">
+        <path d="M20 130 C35 100 30 70 55 50"/>
+        <path d="M20 130 C40 115 45 95 40 75"/>
+      </g>
+      <g>
+        <ellipse cx="50" cy="55" rx="9" ry="5" fill="var(--leaf)" transform="rotate(-30 50 55)"/>
+        <ellipse cx="35" cy="80" rx="8" ry="4.5" fill="var(--leaf-dark)" transform="rotate(20 35 80)"/>
+      </g>
+      <g transform="translate(55 42)">
+        <circle r="13" fill="var(--rose-dark)"/>
+        <circle r="10" fill="var(--rose)"/>
+        <circle r="6.5" fill="var(--rose-light)"/>
+      </g>
+      <g transform="translate(28 95)">
+        <circle r="8" fill="var(--rose)"/>
+        <circle r="5" fill="var(--rose-light)"/>
+      </g>
+    </svg>
+
+    <svg class="decor tr" viewBox="0 0 150 150" aria-hidden="true">
+      <g fill="none" stroke="var(--leaf)" stroke-width="2.2">
+        <path d="M20 130 C35 100 30 70 55 50"/>
+        <path d="M20 130 C40 115 45 95 40 75"/>
+      </g>
+      <ellipse cx="50" cy="55" rx="9" ry="5" fill="var(--leaf)" transform="rotate(-30 50 55)"/>
+      <ellipse cx="35" cy="80" rx="8" ry="4.5" fill="var(--leaf-dark)" transform="rotate(20 35 80)"/>
+      <g transform="translate(55 42)">
+        <circle r="13" fill="var(--rose-dark)"/>
+        <circle r="10" fill="var(--rose)"/>
+        <circle r="6.5" fill="var(--rose-light)"/>
+      </g>
+      <g transform="translate(28 95)">
+        <circle r="7" fill="#f3d9a8"/>
+        <circle r="4" fill="#fdf1d8"/>
+      </g>
+    </svg>
+
+    <!-- teddy bear, bottom-left — redrawn so the arms fuse into the body
+         instead of floating beside it as separate circles, and the heart
+         now sits fully on the tummy instead of poking past the edge -->
+    <svg class="decor bl" viewBox="0 0 120 136" aria-hidden="true">
+      <!-- ears (behind head) -->
+      <circle cx="30" cy="20" r="13" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+      <circle cx="90" cy="20" r="13" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+
+      <!-- head -->
+      <circle cx="60" cy="42" r="30" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+
+      <!-- inner ears -->
+      <circle cx="30" cy="20" r="6" fill="var(--teddy-dark)" opacity="0.45"/>
+      <circle cx="90" cy="20" r="6" fill="var(--teddy-dark)" opacity="0.45"/>
+
+      <!-- face -->
+      <ellipse cx="60" cy="51" rx="15" ry="12" fill="#f3e3cf"/>
+      <circle cx="50" cy="37" r="2.6" fill="var(--teddy-dark)"/>
+      <circle cx="70" cy="37" r="2.6" fill="var(--teddy-dark)"/>
+      <ellipse cx="60" cy="47" rx="4" ry="3" fill="var(--teddy-dark)"/>
+      <path d="M52 57 Q60 63 68 57" fill="none" stroke="var(--teddy-dark)" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- arms, drawn BEHIND the body so they fuse into one silhouette -->
+      <circle cx="20" cy="96" r="17" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+      <circle cx="100" cy="96" r="17" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+      <ellipse cx="13" cy="97" rx="6" ry="7" fill="#f3e3cf"/>
+      <ellipse cx="107" cy="97" rx="6" ry="7" fill="#f3e3cf"/>
+
+      <!-- body, on top of the arms -->
+      <ellipse cx="60" cy="100" rx="36" ry="28" fill="var(--teddy)" stroke="var(--teddy-dark)" stroke-width="1.5"/>
+      <ellipse cx="60" cy="102" rx="19" ry="17" fill="#f3e3cf"/>
+
+      <!-- heart held at the chest, fully on the tummy now -->
+      <path d="M60 108 C57 101 47 101 47 110 C47 118 60 126 60 126 C60 126 73 118 73 110 C73 101 63 101 60 108 Z" fill="var(--rose)"/>
+    </svg>
+
+    <!-- flower cluster, bottom-right -->
+    <svg class="decor br" viewBox="0 0 140 130" aria-hidden="true">
+      <g fill="none" stroke="var(--leaf)" stroke-width="2">
+        <path d="M100 120 C90 95 95 75 75 60"/>
+        <path d="M100 120 C105 100 100 85 110 68"/>
+      </g>
+      <g transform="translate(75 55)">
+        <g fill="#f6c9d6">
+          <circle cx="0" cy="-11" r="8"/>
+          <circle cx="10" cy="-4" r="8"/>
+          <circle cx="7" cy="9" r="8"/>
+          <circle cx="-7" cy="9" r="8"/>
+          <circle cx="-10" cy="-4" r="8"/>
+        </g>
+        <circle r="6" fill="#e7a94a"/>
+      </g>
+      <g transform="translate(108 70) scale(0.7)">
+        <g fill="#eec1d0">
+          <circle cx="0" cy="-11" r="8"/>
+          <circle cx="10" cy="-4" r="8"/>
+          <circle cx="7" cy="9" r="8"/>
+          <circle cx="-7" cy="9" r="8"/>
+          <circle cx="-10" cy="-4" r="8"/>
+        </g>
+        <circle r="6" fill="#d98a3f"/>
+      </g>
+    </svg>
+
+    <h1 class="letter-title">For You</h1>
+    <p class="letter-sub">a little song</p>
+
+    <div class="heart-divider">
+      <svg width="90" height="20" viewBox="0 0 90 20" aria-hidden="true">
+        <g stroke="var(--gold)" stroke-width="1" fill="none">
+          <line x1="0" y1="10" x2="32" y2="10"/>
+          <line x1="58" y1="10" x2="90" y2="10"/>
+        </g>
+        <path d="M45 4 C42 -1 34 1 34 8 C34 14 45 19 45 19 C45 19 56 14 56 8 C56 1 48 -1 45 4 Z" fill="var(--rose)"/>
+      </svg>
+    </div>
+
+    <!-- karaoke-style: only the current lyric line is ever shown -->
+    <div class="lyric-stage">
+
+      <div class="start-wrap" id="startWrap">
+        <div class="start-ring">
+          <svg class="wreath" viewBox="0 0 118 118" aria-hidden="true">
+            <g>
+              <circle cx="59" cy="6" r="5" fill="var(--rose)"/>
+              <circle cx="59" cy="112" r="5" fill="var(--rose)"/>
+              <circle cx="6" cy="59" r="5" fill="var(--leaf)"/>
+              <circle cx="112" cy="59" r="5" fill="var(--leaf)"/>
+              <circle cx="20" cy="20" r="4" fill="var(--rose-light)"/>
+              <circle cx="98" cy="20" r="4" fill="var(--rose-light)"/>
+              <circle cx="20" cy="98" r="4" fill="var(--rose-light)"/>
+              <circle cx="98" cy="98" r="4" fill="var(--rose-light)"/>
+            </g>
+          </svg>
+          <button class="start-btn" id="startBtn" aria-label="Play the song">
+            <svg viewBox="0 0 16 16"><path d="M3 1 L14 8 L3 15 Z"/></svg>
+          </button>
+        </div>
+        <p class="start-caption">press play to begin</p>
+      </div>
+
+      <div class="lyric-history" id="lyricHistory" aria-live="polite"></div>
+    </div>
+
+    <div class="letter-footer-space"></div>
+  </div>
+</div>
+
+<!-- docked player, slides up from the bottom of the page once playback starts -->
+<div class="player" id="player">
+  <button class="play-btn" id="playBtn" aria-label="Play">
+    <svg id="playIcon" viewBox="0 0 16 16"><path d="M3 1 L14 8 L3 15 Z"/></svg>
+  </button>
+  <div class="player-mid">
+    <div class="progress-row">
+      <span class="time current" id="timeCurrent">0:00</span>
+      <div class="progress-track" id="progressTrack">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-thumb" id="progressThumb"></div>
+      </div>
+      <span class="time total" id="timeTotal">0:00</span>
+    </div>
+  </div>
+  <div class="vol-row">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#4a3826" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+      <path d="M16 8a5 5 0 0 1 0 8"/>
+    </svg>
+    <div class="vol-track" id="volTrack">
+      <div class="vol-fill" id="volFill"></div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio" preload="metadata">
+  <source src="https://raw.githubusercontent.com/Henilshingala/Restart/main/600_second_only.mp3" type="audio/mpeg">
+  <!-- if this raw URL 404s, the repo's default branch may not be "main" — try /master/ instead -->
+</audio>
+
+<script>
+/* ============================================================
+   LYRIC TIMESTAMPS
+   These 16 times (seconds) were derived from the actual audio file:
+   its real length is ~134.7s, with a quiet intro up to ~2.1s and a
+   quiet outro starting ~134.2s. Points in between were placed at the
+   track's natural energy dips (breaths/pauses between phrases) where
+   one was clearly present, and evenly spaced across the remaining
+   sections where the pauses were too subtle to isolate automatically.
+   This is a strong data-driven estimate, not a frame-perfect manual
+   sync — if any single line still feels off by a second or two,
+   nudge that one number below; you don't need to touch the rest.
+   ============================================================ */
+const LYRIC_TIMESTAMPS = [
+  14.0, 17, 25, 30,
+  37, 43, 50, 55,
+  61, 67, 73, 80,
+  110, 117, 124, 129
+];
+
+const LYRICS = [
+  "You said what comes easy may fade away,",
+  "But I’ll value you the same, in every way.",
+  "I don’t need five hours, ten minutes will do,",
+  "A little time each day is enough for me and you.",
+  "If friends don’t share their pain, their smiles, or their days,",
+  "Then how does a friendship grow in meaningful ways?",
+  "Years may pass, and we may still call it friendship by name,",
+  "But being there through good and bad is what makes it more than the same.",
+  "If I have ever made a mistake, just tell me what went wrong,",
+  "If I have ever hurt you, just tell me where I went wrong.",
+  "And if it’s difficult to say, just tell me “yes” or “no,”",
+  "I’ll understand my mistake and know where I need to grow.",
+  "But you suddenly changed, and I still wonder why,",
+  "You weren’t like this before, so I can’t help but ask why.",
+  "I don’t want to force the past or ask for something new,",
+  "I just wonder if the friendship we once had can come back too."
+];
+
+const audio = document.getElementById('audio');
+const startWrap = document.getElementById('startWrap');
+const startBtn = document.getElementById('startBtn');
+const lyricHistory = document.getElementById('lyricHistory');
+
+const player = document.getElementById('player');
+const playBtn = document.getElementById('playBtn');
+const playIcon = document.getElementById('playIcon');
+const progressTrack = document.getElementById('progressTrack');
+const progressFill = document.getElementById('progressFill');
+const progressThumb = document.getElementById('progressThumb');
+const timeCurrent = document.getElementById('timeCurrent');
+const timeTotal = document.getElementById('timeTotal');
+const volTrack = document.getElementById('volTrack');
+const volFill = document.getElementById('volFill');
+
+// ---- ambient falling petals ----
+const petalsHost = document.getElementById('petals');
+for(let i=0;i<10;i++){
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.style.left = Math.random()*100 + 'vw';
+  p.style.animationDuration = (10 + Math.random()*8) + 's';
+  p.style.animationDelay = (Math.random()*10) + 's';
+  p.style.opacity = 0.4 + Math.random()*0.4;
+  p.style.transform = `scale(${0.6 + Math.random()*0.8})`;
+  petalsHost.appendChild(p);
+}
+
+// ---- begin playback: start button -> dock player at bottom ----
+function beginPlayback(){
+  startWrap.classList.add('hidden');
+  document.querySelector('.lyric-stage').classList.add('playing');
+  player.classList.add('docked');
+  audio.play().catch(()=>{ /* if autoplay is blocked, the docked play button still works */ });
+  setPlayIcon(true);
+}
+startBtn.addEventListener('click', beginPlayback);
+
+// ---- play / pause (docked player) ----
+function setPlayIcon(isPlaying){
+  playIcon.innerHTML = isPlaying
+    ? '<rect x="2" y="1" width="4" height="14" rx="1"></rect><rect x="10" y="1" width="4" height="14" rx="1"></rect>'
+    : '<path d="M3 1 L14 8 L3 15 Z"></path>';
+}
+playBtn.addEventListener('click', ()=>{
+  if(audio.paused){ audio.play().catch(()=>{}); setPlayIcon(true); }
+  else { audio.pause(); setPlayIcon(false); }
+});
+audio.addEventListener('play', ()=> setPlayIcon(true));
+audio.addEventListener('pause', ()=> setPlayIcon(false));
+audio.addEventListener('ended', ()=> setPlayIcon(false));
+
+// ---- time formatting ----
+function formatTime(sec){
+  if(!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec/60);
+  const s = Math.floor(sec%60);
+  return m + ':' + String(s).padStart(2,'0');
+}
+audio.addEventListener('loadedmetadata', ()=>{ timeTotal.textContent = formatTime(audio.duration); });
+
+// ---- progress bar ----
+function updateProgressUI(){
+  const dur = audio.duration || 0;
+  const cur = audio.currentTime || 0;
+  const pct = dur ? (cur/dur)*100 : 0;
+  progressFill.style.width = pct + '%';
+  progressThumb.style.left = pct + '%';
+  timeCurrent.textContent = formatTime(cur);
+}
+function seekFromEvent(clientX){
+  const rect = progressTrack.getBoundingClientRect();
+  let pct = (clientX - rect.left) / rect.width;
+  pct = Math.min(1, Math.max(0, pct));
+  if(audio.duration) audio.currentTime = pct * audio.duration;
+  updateProgressUI();
+}
+let isScrubbing = false;
+progressTrack.addEventListener('mousedown', e=>{ isScrubbing=true; seekFromEvent(e.clientX); });
+window.addEventListener('mousemove', e=>{ if(isScrubbing) seekFromEvent(e.clientX); });
+window.addEventListener('mouseup', ()=>{ isScrubbing=false; });
+progressTrack.addEventListener('touchstart', e=>{ isScrubbing=true; seekFromEvent(e.touches[0].clientX); }, {passive:true});
+progressTrack.addEventListener('touchmove', e=>{ if(isScrubbing) seekFromEvent(e.touches[0].clientX); }, {passive:true});
+progressTrack.addEventListener('touchend', ()=>{ isScrubbing=false; });
+
+// ---- volume ----
+function setVolumeFromEvent(clientX){
+  const rect = volTrack.getBoundingClientRect();
+  let pct = (clientX - rect.left) / rect.width;
+  pct = Math.min(1, Math.max(0, pct));
+  audio.volume = pct;
+  volFill.style.width = (pct*100) + '%';
+}
+audio.volume = 0.8;
+volFill.style.width = '80%';
+let isVolDragging = false;
+volTrack.addEventListener('mousedown', e=>{ isVolDragging=true; setVolumeFromEvent(e.clientX); });
+window.addEventListener('mousemove', e=>{ if(isVolDragging) setVolumeFromEvent(e.clientX); });
+window.addEventListener('mouseup', ()=>{ isVolDragging=false; });
+
+// ---- karaoke: keep every sung line visible; fade only the past lines ----
+const lyricNodes = LYRICS.map((text, index)=>{
+  const el = document.createElement('p');
+  el.className = 'lyric-line future';
+  el.dataset.index = index;
+  el.textContent = text;
+  lyricHistory.appendChild(el);
+  return el;
+});
+
+let currentIndex = -1;
+
+function updateActiveLine(){
+  const t = audio.currentTime;
+  let idx = -1;
+
+  for(let i=0;i<LYRIC_TIMESTAMPS.length;i++){
+    if(LYRIC_TIMESTAMPS[i] <= t) idx = i;
+    else break;
+  }
+
+  if(idx === currentIndex) return;
+  currentIndex = idx;
+
+  lyricNodes.forEach((line, i)=>{
+    line.classList.remove('past','current','future');
+
+    if(i < idx){
+      line.classList.add('past');
+    }else if(i === idx){
+      line.classList.add('current');
+    }else{
+      line.classList.add('future');
+    }
+  });
+
+  // Auto-scroll the page so the newly active line scrolls into a
+  // comfortable reading position as each lyric appears.
+  if(idx >= 0){
+    lyricNodes[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+audio.addEventListener('timeupdate', ()=>{
+  updateProgressUI();
+  updateActiveLine();
+});
+
+audio.addEventListener('ended', ()=>{
+  // At the end, turn the lyric area into the complete written song.
+  lyricNodes.forEach(line=>{
+    line.classList.remove('past','current','future');
+    line.classList.add('past');
+  });
+  lyricHistory.classList.add('finished');
+  document.querySelector('.lyric-stage').classList.add('finished');
+});
+</script>
+
+</body>
+</html>
